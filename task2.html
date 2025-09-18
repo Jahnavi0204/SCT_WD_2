@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Stopwatch</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    /* Example “Deep Blue Waters” palette (you can tweak or add more shades) */
+    :root {
+      --blue-1: #00223D;  /* darkest */
+      --blue-2: #003754;
+      --blue-3: #006994;
+      --blue-4: #0077A6;
+      --blue-5: #085895;  /* lighter */
+      --blue-6: #30B7D2;  /* accent / highlight */
+      --blue-7: #b0e0f0;  /* very light, background accent */
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, var(--blue-7), var(--blue-4), var(--blue-1));
+      font-family: Arial, sans-serif;
+      color: var(--blue-1);
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid var(--blue-3);
+      border-radius: 16px;
+      padding: 2rem;
+      width: 320px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+
+    .title {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      color: var(--blue-1);
+    }
+
+    .display {
+      font-family: monospace;
+      font-size: 3rem;
+      color: var(--blue-2);
+      margin-bottom: 1.5rem;
+      letter-spacing: 2px;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .buttons button {
+      flex: 1 0 40%;
+      padding: 0.5rem 0.8rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .buttons button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-start {
+      background-color: var(--blue-4);
+      color: white;
+    }
+    .btn-start:hover:not(:disabled) {
+      background-color: var(--blue-5);
+    }
+
+    .btn-stop {
+      background-color: var(--blue-3);
+      color: white;
+    }
+    .btn-stop:hover:not(:disabled) {
+      background-color: var(--blue-2);
+    }
+
+    .btn-lap {
+      background-color: var(--blue-6);
+      color: var(--blue-1);
+    }
+    .btn-lap:hover:not(:disabled) {
+      background-color: var(--blue-5);
+    }
+
+    .btn-reset {
+      background-color: var(--blue-7);
+      color: var(--blue-1);
+    }
+    .btn-reset:hover:not(:disabled) {
+      background-color: var(--blue-4);
+      color: white;
+    }
+
+    .laps {
+      margin-top: 1rem;
+      max-height: 160px;
+      overflow-y: auto;
+      text-align: left;
+      background: rgba(255,255,255,0.8);
+      border: 1px solid var(--blue-3);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-family: monospace;
+      color: var(--blue-1);
+    }
+
+    .laps h2 {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      color: var(--blue-2);
+    }
+
+    .lap-entry {
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeInUp 0.4s forwards;
+      margin-bottom: 0.25rem;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="title">Stopwatch</div>
+    <div class="display" id="display">00:00.00</div>
+    <div class="buttons">
+      <button id="startBtn" class="btn-start">Start</button>
+      <button id="stopBtn" class="btn-stop" disabled>Stop</button>
+      <button id="lapBtn" class="btn-lap" disabled>Lap</button>
+      <button id="resetBtn" class="btn-reset" disabled>Reset</button>
+    </div>
+    <div class="laps" id="laps"></div>
+  </div>
+
+  <script>
+    let startTime = 0;
+    let elapsed = 0;
+    let timerInterval = null;
+
+    const display = document.getElementById("display");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const lapBtn = document.getElementById("lapBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const lapsDiv = document.getElementById("laps");
+
+    function formatTime(ms) {
+      const totalSec = Math.floor(ms / 1000);
+      const minutes = String(Math.floor(totalSec / 60)).padStart(2, "0");
+      const secs = String(totalSec % 60).padStart(2, "0");
+      const centi = String(Math.floor((ms % 1000) / 10)).padStart(2, "0");
+      return `${minutes}:${secs}.${centi}`;
+    }
+
+    function updateDisplay() {
+      display.textContent = formatTime(elapsed);
+    }
+
+    startBtn.addEventListener("click", () => {
+      startTime = Date.now() - elapsed;
+      timerInterval = setInterval(() => {
+        elapsed = Date.now() - startTime;
+        updateDisplay();
+      }, 10);
+
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      lapBtn.disabled = false;
+      resetBtn.disabled = false;
+    });
+
+    stopBtn.addEventListener("click", () => {
+      clearInterval(timerInterval);
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      lapBtn.disabled = true;
+    });
+
+    resetBtn.addEventListener("click", () => {
+      clearInterval(timerInterval);
+      elapsed = 0;
+      updateDisplay();
+      lapsDiv.innerHTML = "";  // clear laps
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      lapBtn.disabled = true;
+      resetBtn.disabled = true;
+    });
+
+    lapBtn.addEventListener("click", () => {
+      // Only add lap if timer is running
+      const lapTime = formatTime(elapsed);
+
+      if (!lapsDiv.querySelector("h2")) {
+        const h2 = document.createElement("h2");
+        h2.textContent = "Laps";
+        lapsDiv.appendChild(h2);
+      }
+      const p = document.createElement("p");
+      const lapCount = lapsDiv.querySelectorAll("p").length + 1;
+      p.textContent = `Lap ${lapCount}: ${lapTime}`;
+      p.classList.add("lap-entry");
+      lapsDiv.appendChild(p);
+    });
+  </script>
+</body>
+</html>
